@@ -4,7 +4,7 @@
 
   const origin = 'https://leetcode.com';
   const submitPath = /^\/problems\/([a-z0-9-]{1,200})\/submit\/?$/;
-  const numericId = /^[1-9]\d{0,9}$/;
+  const numericId = /^[1-9]\d{0,18}$/;
 
   function submitSlug(input, method) {
     if (String(method).toUpperCase() !== 'POST') return null;
