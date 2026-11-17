@@ -1,0 +1,59 @@
+# Verdict Sync
+
+Verdict Sync saves your **accepted LeetCode submissions** to a GitHub repository you choose. The Chrome and Brave toolbar popup shows your destination, sync switch, and latest activity.
+
+## Install and connect
+
+1. Download the project and extract it. Open `chrome://extensions` or `brave://extensions`, turn on **Developer mode**, and choose **Load unpacked**. Select the **`extension/`** folder.
+2. Choose a GitHub repository for your solutions, such as `Leetcode-submissions`. Initialize new repositories with a README so they have a default branch.
+3. [Create a fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) for that repository with **Contents → Read and write**. Enter the repo URL and token in the popup, then select **Connect GitHub**.
+4. Sign in to LeetCode and refresh any open LeetCode tabs. Use **Submit** and keep the problem tab open until judging finishes. The popup shows the resulting commit after sync.
+
+## What gets committed
+
+```text
+Leetcode-submissions/
+├── README.md
+├── STATS.md
+├── .verdict-sync/
+│   └── index.json
+└── array/
+    └── easy/
+        └── 0001-two-sum/
+            ├── README.md
+            ├── python3-1923456789.py
+            └── typescript-1923456790.ts
+```
+
+The first LeetCode topic determines the folder, and the problem stays there on later syncs. Problems without a topic go under `uncategorized/`. The generated problem README lists all topics, the difficulty, and a link to LeetCode. Each accepted attempt gets its own source file.
+
+**`STATS.md`** updates in the same commit with unique problems solved, accepted submissions, breakdowns by topic, difficulty, and language, and recent activity with runtime and memory when available. The generated index remembers submission IDs and folder paths. Topic totals include every tag on a problem.
+
+## Architecture
+
+![Architecture diagram showing the LeetCode submit observer and isolated result relay passing verified code to the extension service worker, which uses the popup's saved repository settings to create a commit on GitHub.](docs/architecture.png)
+
+| Component | Responsibility |
+| --- | --- |
+| [Submit observer](extension/observer.js) | Captures the submission ID from a successful **Submit** response. **Run** does not start a sync. |
+| [Result relay](extension/relay.js) | Checks that LeetCode returned **Accepted** for that ID and fetches the exact saved source for the signed-in user. |
+| [Service worker](extension/worker.js) | Saves validated submissions in a local queue and retries temporary failures. |
+| [GitHub client](extension/github.js) and [stats generator](extension/stats.js) | Read the current index, deduplicate submissions, and commit the source, problem README, stats, and index together. Concurrent branch changes trigger a retry against the new head. |
+| [Toolbar popup](extension/popup.html) | Sets the destination and auto-sync state and shows the latest activity. |
+
+There is no backend. The token and pending queue are stored in your browser profile. The token is sent only to GitHub's API. Verdict Sync uses your existing LeetCode session and tracks new submissions on `leetcode.com`.
+
+## Troubleshooting
+
+| If you see | Try |
+| --- | --- |
+| **Connect fails** | Confirm the repository has an initial commit, the token includes that exact repository, and **Contents** is **Read and write**. An organization may require token approval. |
+| **Accepted but nothing synced** | Check the auto-sync switch and the repository shown. Refresh old tabs after loading or updating the extension. Keep the LeetCode tab open until it finishes reading the result. |
+| **A submission is waiting** | Temporary GitHub errors retry automatically while sync is on. Use **Retry sync** once the issue is fixed. If your token expired, use **Update token**. |
+| **GitHub blocks the branch update** | The selected repository's default branch must permit direct commits from your account. Use a dedicated solutions repository if your main repo requires pull requests. |
+
+Turning auto-sync off holds queued uploads and skips new captures. Disconnecting clears the token and prompts before discarding queued uploads. Changes to LeetCode's website may require an extension update.
+
+## Develop and verify
+
+Run `npm test` with Node.js 20 or newer. To regenerate the architecture image and icons, install Matplotlib and run `python tools/draw_architecture.py`.
