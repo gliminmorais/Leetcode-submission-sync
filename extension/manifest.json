@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "120",
+  "name": "Verdict Sync",
+  "description": "Commit accepted LeetCode submissions to a GitHub repository you choose.",
+  "version": "1.0.0",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://api.github.com/*"],
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_title": "Verdict Sync",
+    "default_popup": "popup.html",
+    "default_icon": {"16": "icons/16.png", "32": "icons/32.png"}
+  },
+  "background": {"service_worker": "worker.js", "type": "module"},
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/*"],
+      "js": ["relay.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    },
+    {
+      "matches": ["https://leetcode.com/*"],
+      "js": ["observer.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ]
+}

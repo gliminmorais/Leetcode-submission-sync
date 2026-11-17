@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verdict Sync</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" type="module"></script>
+</head>
+<body>
+  <header class="masthead">
+    <img width="32" height="32" src="icons/32.png" alt="">
+    <h1>Verdict Sync</h1>
+  </header>
+  <main id="app" aria-busy="true">
+    <p id="loading" class="muted">Loading connection…</p>
+    <section id="setup" aria-labelledby="setup-title" hidden>
+      <h2 id="setup-title">Connect GitHub</h2>
+      <p class="intro">Send your accepted LeetCode submissions to one repository.</p>
+      <form id="connect-form">
+        <label for="repo">Repository</label>
+        <input id="repo" required placeholder="you/Leetcode-submissions" maxlength="160" autocomplete="off" spellcheck="false">
+        <div class="field-heading">
+          <label for="token">Access token</label>
+          <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">Create token ↗</a>
+        </div>
+        <input id="token" required type="password" maxlength="300" autocomplete="off" spellcheck="false"
+          placeholder="github_pat_…" aria-describedby="token-help">
+        <p class="hint" id="token-help">Use a fine-grained token for this repo with Contents: Read and write.</p>
+        <button id="connect" class="primary" type="submit">Connect GitHub</button>
+      </form>
+    </section>
+    <section id="connected" aria-labelledby="connected-title" hidden>
+      <div class="overline" id="connected-title"><span class="dot"></span> GitHub connected</div>
+      <a class="repo-link" id="repo-link" target="_blank" rel="noreferrer"></a>
+      <p class="branch" id="branch"></p>
+      <label class="sync-row" for="enabled">
+        <span><strong>Auto-sync</strong><span class="hint">Accepted submissions only</span></span>
+        <input id="enabled" type="checkbox" role="switch">
+      </label>
+      <section class="activity" aria-labelledby="activity-title">
+        <div class="activity-heading">
+          <h2 id="activity-title">Activity</h2>
+          <time id="last-sync" hidden></time>
+        </div>
+        <p id="activity" aria-live="polite"></p>
+        <a id="commit-link" target="_blank" rel="noreferrer" hidden>View commit ↗</a>
+        <div id="recovery" class="recovery" hidden>
+          <button class="text-button" id="retry" type="button">Retry sync</button>
+          <button class="text-button" id="update-token" type="button">Update token</button>
+        </div>
+        <form id="update-form" hidden>
+          <label for="new-token">New access token</label>
+          <input id="new-token" required type="password" maxlength="300" autocomplete="off" spellcheck="false">
+          <div class="form-actions">
+            <button class="primary" type="submit">Save token</button>
+            <button class="text-button" id="cancel-token" type="button">Cancel</button>
+          </div>
+        </form>
+      </section>
+      <footer>
+        <span class="account" id="account"></span>
+        <button class="text-button" id="disconnect" type="button">Disconnect</button>
+      </footer>
+      <div id="disconnect-confirmation" class="confirmation" hidden>
+        <p>Disconnecting discards submissions still waiting to sync.</p>
+        <div class="form-actions">
+          <button class="text-button danger" id="confirm-disconnect" type="button">Discard and disconnect</button>
+          <button class="text-button" id="cancel-disconnect" type="button">Cancel</button>
+        </div>
+      </div>
+    </section>
+    <p id="error" role="alert" hidden></p>
+    <p class="credit"><a href="https://gliminmorais.vercel.app/" target="_blank" rel="noreferrer">made by gliminmorais</a></p>
+  </main>
+</body>
+</html>
