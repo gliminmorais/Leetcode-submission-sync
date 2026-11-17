@@ -61,12 +61,27 @@ function render(next) {
   }
   element('recovery').hidden = !issue;
   element('retry').disabled = busy || !enabled;
+  element('sync-open').disabled = busy || !enabled;
 }
 
 async function send(type, fields = {}) {
   const response = await chrome.runtime.sendMessage({ type, ...fields });
   if (!response?.ok) throw new Error(response?.error || 'Verdict Sync could not reach its background worker.');
   return response;
+}
+
+async function syncOpenSubmission() {
+  let result;
+  try {
+    const [activeTab] = await chrome.tabs.query({active: true, currentWindow: true});
+    if (activeTab?.id != null) {
+      result = await chrome.tabs.sendMessage(activeTab.id, {type: 'sync-open-submission'}, {frameId: 0});
+    }
+  } catch {
+    throw new Error('Open the accepted submission on leetcode.com and refresh the tab before syncing.');
+  }
+  if (!result?.ok) throw new Error(result?.error || 'Open a LeetCode submission before syncing.');
+  return send('status');
 }
 
 async function refresh() {
@@ -91,7 +106,7 @@ async function perform(type, fields, onSuccess) {
   setBusy(true);
   showError('');
   try {
-    const response = await send(type, fields);
+    const response = type === 'sync-open' ? await syncOpenSubmission() : await send(type, fields);
     setBusy(false);
     render(response);
     onSuccess?.();
@@ -118,6 +133,7 @@ element('enabled').addEventListener('change', event => {
   void perform('toggle', { enabled: event.target.checked });
 });
 element('retry').addEventListener('click', () => { void perform('retry'); });
+element('sync-open').addEventListener('click', () => { void perform('sync-open'); });
 element('update-token').addEventListener('click', () => {
   element('update-form').hidden = false;
   element('new-token').focus();

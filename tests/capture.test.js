@@ -53,10 +53,12 @@ test('the request observer identifies Submit and keeps Run and failed requests o
   ]);
 });
 
-async function relay({epoch = 3, verdict = 10, submitter = 'solver', preliminaryChecks = []} = {}) {
+async function relay({epoch = 3, verdict = 10, submitter = 'solver', preliminaryChecks = [],
+  id = '12345', manual = false, stringId = false} = {}) {
   const messages = [];
   const requests = [];
   let listener;
+  let extensionListener;
   const window = {addEventListener: (_, callback) => {listener = callback;}};
   let completed;
   const finished = new Promise(resolve => { completed = resolve; });
@@ -64,10 +66,15 @@ async function relay({epoch = 3, verdict = 10, submitter = 'solver', preliminary
     requests.push(String(url));
     if (String(url).includes('/check/')) {
       if (preliminaryChecks.length) return preliminaryChecks.shift();
-      return Response.json({state: 'SUCCESS', submission_id: 12345, status_code: verdict});
+      return Response.json({state: 'SUCCESS', submission_id: id, status_code: verdict});
     }
     assert.equal(options.headers['X-CSRFToken'], 'example');
-    assert.deepEqual(JSON.parse(options.body).variables, {submissionId: 12345, titleSlug: 'two-sum'});
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body.variables, {titleSlug: 'two-sum'});
+    if (stringId && body.query.includes('submissionId: ' + id + ')')) {
+      return Response.json({errors: [{message: 'String cannot represent a non string value'}]}, {status: 400});
+    }
+    assert.ok(body.query.includes('submissionId: ' + (stringId ? '"' + id + '"' : id) + ')'));
     return Response.json({data: {
       userStatus: {isSignedIn: true, username: 'solver'},
       submissionDetails: {
@@ -81,17 +88,25 @@ async function relay({epoch = 3, verdict = 10, submitter = 'solver', preliminary
       }
     }});
   };
-  const chrome = {runtime: {sendMessage: async message => {
+  const popupUrl = 'chrome-extension://test/popup.html';
+  const chrome = {runtime: {id: 'test', getURL: () => popupUrl,
+    onMessage: {addListener: callback => {extensionListener = callback;}},
+    sendMessage: async message => {
     messages.push(JSON.parse(JSON.stringify(message)));
     if (message.type === 'capture') return {ok: true, epoch};
     completed();
-    return {ok: true};
+    return {ok: true, queued: true};
   }}};
   await runScript('relay', {
     window, document: {cookie: 'csrftoken=example'}, chrome, fetch, AbortSignal,
+    location: manual ? new URL(origin + '/problems/two-sum/submissions/' + id + '/') : location,
     setTimeout: callback => queueMicrotask(callback)
   });
-  listener({...signal, source: window});
+  if (manual) {
+    await new Promise(resolve => extensionListener({type: 'sync-open-submission'}, {id: 'test', url: popupUrl}, resolve));
+  } else {
+    listener({...signal, source: window, data: {...signal.data, id}});
+  }
   if (epoch !== null && verdict === 10) {
     await Promise.race([finished, new Promise(resolve => setImmediate(resolve))]);
   } else {
@@ -110,6 +125,19 @@ test('accepted submission sync uses the matching stored code and problem metadat
       code: 'return [0, 1]\n', runtime: '3 ms', memory: '14 MB'
     }
   });
+});
+
+test('a submission above the signed 32-bit limit reaches the queue with its exact ID', async () => {
+  const result = await relay({id: '2197891760'});
+  assert.equal(result.messages.at(-1)?.type, 'enqueue');
+  assert.equal(result.messages.at(-1)?.entry?.id, '2197891760');
+});
+
+test('the popup can recover an open submission with a large string-valued ID', async () => {
+  const id = '9007199254740993';
+  const result = await relay({id, manual: true, stringId: true});
+  assert.equal(result.messages.at(-1)?.type, 'enqueue');
+  assert.equal(result.messages.at(-1)?.entry?.id, id);
 });
 
 test('paused sync makes no judging or source request', async () => {

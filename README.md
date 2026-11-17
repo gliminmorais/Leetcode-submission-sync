@@ -22,6 +22,10 @@ Verdict Sync saves your **accepted LeetCode submissions** to a GitHub repository
 2. Refresh any LeetCode tabs that were already open. On a problem page, click **Submit** and keep the tab open until the extension reads the result.
 3. When LeetCode marks your submission **Accepted**, open Verdict Sync and select **View commit** to see the uploaded files in GitHub.
 
+To recover a missed upload, open the accepted attempt from LeetCode's **Submissions** list, open Verdict Sync, and select **Sync open submission**. The extension checks the saved result and skips submission IDs that are already in the repository.
+
+To update an unpacked installation, replace the contents of the same `extension/` folder, click **Reload** on the browser's Extensions page, and refresh your LeetCode tabs. Using the same folder keeps your connection settings.
+
 ## What gets committed
 
 ```text
@@ -48,8 +52,8 @@ The first LeetCode topic determines the folder, and the problem stays there on l
 
 | Component | Responsibility |
 | --- | --- |
-| [Submit observer](extension/observer.js) | Captures the submission ID from a successful **Submit** response. **Run** does not start a sync. |
-| [Result relay](extension/relay.js) | Checks that LeetCode returned **Accepted** for that ID and fetches the exact saved source for the signed-in user. |
+| [Submit observer](extension/observer.js) | Captures the submission ID from a successful **Submit** response and keeps the matching request source as a fallback. **Run** does not start a sync. |
+| [Result relay](extension/relay.js) | Checks that LeetCode returned **Accepted** for that ID and reads the saved source. If saved details are unavailable after a new Submit, it checks the signed-in user's submission history before using the exact request source. |
 | [Service worker](extension/worker.js) | Saves validated submissions in a local queue and retries temporary failures. |
 | [GitHub client](extension/github.js) and [stats generator](extension/stats.js) | Read the current index, deduplicate submissions, and commit the source, problem README, stats, and index together. Concurrent branch changes trigger a retry against the new head. |
 | [Toolbar popup](extension/popup.html) | Sets the destination and auto-sync state and shows the latest activity. |

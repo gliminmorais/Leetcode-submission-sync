@@ -96,6 +96,7 @@ button:disabled, input:disabled { cursor: default; opacity: .6; }
 #last-sync { font-size: 11px; color: var(--muted); }
 #activity { color: var(--muted); font-size: 13px; }
 #commit-link { display: inline-block; margin-top: 4px; }
+.sync-open { display: block; margin-top: 4px; }
 .recovery, .form-actions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-top: 4px; }
 #update-form { margin-top: 10px; }
 .text-button {

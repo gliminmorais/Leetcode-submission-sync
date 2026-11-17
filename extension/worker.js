@@ -173,7 +173,9 @@ async function fromLeetCode(message) {
     await updateState(state => {
       if (state.enabled && state.epoch === message.epoch) state.activity = {
         kind: 'error',
-        title: 'Could not read the LeetCode result. Keep the problem tab open and sign in before submitting.',
+        title: message.accepted === true
+          ? 'LeetCode accepted the submission, but Verdict Sync could not read the saved code.'
+          : 'Could not confirm the LeetCode verdict. Reload the submission page and try again.',
         at: Date.now()
       };
     });

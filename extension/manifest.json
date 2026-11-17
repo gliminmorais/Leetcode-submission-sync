@@ -3,7 +3,7 @@
   "minimum_chrome_version": "120",
   "name": "Verdict Sync",
   "description": "Commit accepted LeetCode submissions to a GitHub repository you choose.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "permissions": ["storage", "alarms"],
   "host_permissions": ["https://api.github.com/*"],
   "icons": {

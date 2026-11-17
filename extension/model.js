@@ -1,5 +1,5 @@
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const idPattern = /^[1-9]\d{0,11}$/;
+const idPattern = /^[1-9]\d{0,18}$/;
 const languagePattern = /^[a-z0-9][a-z0-9-]{0,30}$/;
 const extensions = {
   c: 'c', cpp: 'cpp', csharp: 'cs', dart: 'dart', elixir: 'ex', erlang: 'erl',

@@ -1,4 +1,4 @@
-// MAIN world: observe LeetCode's own Submit response without reading request bodies.
+// MAIN world: correlate a successful Submit response with its exact request.
 (() => {
   'use strict';
 
@@ -16,28 +16,50 @@
     }
   }
 
-  function report(result, slug) {
+  function submittedSource(body) {
+    if (typeof body !== 'string' || body.length > 600_000) return undefined;
+    try {
+      const {typed_code: code, lang: language} = JSON.parse(body);
+      if (typeof code === 'string' && code.length <= 96 * 1024 &&
+          typeof language === 'string' && /^[a-z0-9][a-z0-9-]{0,30}$/.test(language)) {
+        return {code, language};
+      }
+    } catch {
+      // An unreadable body can still be synced via the saved submission.
+    }
+  }
+
+  function report(result, slug, submitted) {
     const rawId = result?.submission_id;
-    if (typeof rawId !== 'number' && typeof rawId !== 'string') return;
+    if (typeof rawId !== 'string' && !Number.isSafeInteger(rawId)) return;
     const id = String(rawId);
-    if (numericId.test(id)) window.postMessage({kind: 'verdict-sync:submitted', id, slug}, origin);
+    if (numericId.test(id)) {
+      window.postMessage({kind: 'verdict-sync:submitted', id, slug, ...(submitted ? {submitted} : {})}, origin);
+    }
   }
 
   const fetchPage = window.fetch;
   window.fetch = function (input, init) {
-    const result = Reflect.apply(fetchPage, this, arguments);
+    let slug, source;
     try {
       const request = input instanceof Request ? input : null;
-      const slug = submitSlug(request?.url ?? input, init?.method ?? request?.method ?? 'GET');
-      if (slug) {
-        // Clone before the page consumes the body. The original response and promise are unchanged.
-        void result.then(response => {
-          if (!response.ok || (response.url && submitSlug(response.url, 'POST') !== slug)) return;
-          return response.clone().json().then(data => report(data, slug));
-        }).catch(() => {});
+      slug = submitSlug(request?.url ?? input, init?.method ?? request?.method ?? 'GET');
+      if (slug && request && init?.body == null) {
+        source = request.clone().text().then(submittedSource).catch(() => undefined);
+      } else if (slug) {
+        source = submittedSource(init?.body);
       }
     } catch {
       // Observation failures must not interfere with the site's request.
+    }
+    const result = Reflect.apply(fetchPage, this, arguments);
+    if (slug) {
+      // Clone before the page consumes the response. The original promise is unchanged.
+      void result.then(async response => {
+        if (!response.ok || (response.url && submitSlug(response.url, 'POST') !== slug)) return;
+        const data = await response.clone().json();
+        report(data, slug, await source);
+      }).catch(() => {});
     }
     return result;
   };
@@ -54,16 +76,17 @@
     return result;
   };
 
-  xhr.send = function () {
+  xhr.send = function (body) {
     const request = submissions.get(this);
     if (request?.slug) {
+      const source = submittedSource(body);
       const onLoad = () => {
         if (submissions.get(this) !== request || this.status < 200 || this.status >= 300 ||
             submitSlug(this.responseURL, 'POST') !== request.slug) return;
         try {
-          if (this.responseType === 'json') report(this.response, request.slug);
+          if (this.responseType === 'json') report(this.response, request.slug, source);
           if (this.responseType === '' || this.responseType === 'text') {
-            report(JSON.parse(this.responseText), request.slug);
+            report(JSON.parse(this.responseText), request.slug, source);
           }
         } catch {
           // The page owns the request and handles its own HTTP or parsing errors.
