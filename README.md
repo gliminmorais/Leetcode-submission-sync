@@ -2,12 +2,25 @@
 
 Verdict Sync saves your **accepted LeetCode submissions** to a GitHub repository you choose. The Chrome and Brave toolbar popup shows your destination, sync switch, and latest activity.
 
-## Install and connect
+## How to set up
 
-1. Download the project and extract it. Open `chrome://extensions` or `brave://extensions`, turn on **Developer mode**, and choose **Load unpacked**. Select the **`extension/`** folder.
-2. Choose a GitHub repository for your solutions, such as `Leetcode-submissions`. Initialize new repositories with a README so they have a default branch.
-3. [Create a fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) for that repository with **Contents → Read and write**. Enter the repo URL and token in the popup, then select **Connect GitHub**.
-4. Sign in to LeetCode and refresh any open LeetCode tabs. Use **Submit** and keep the problem tab open until judging finishes. The popup shows the resulting commit after sync.
+### Download and install the extension
+
+1. [Download Verdict Sync as a ZIP](https://github.com/gliminmorais/Leetcode-submission-sync/archive/refs/heads/main.zip) and extract it. You can also choose **Code → Download ZIP** on this repository's GitHub page.
+2. Open `chrome://extensions` in Chrome or `brave://extensions` in Brave and turn on **Developer mode**.
+3. Click **Load unpacked** and select the extracted **`extension/`** folder that contains `manifest.json`. Pin **Verdict Sync** from the browser's Extensions menu for easy access.
+
+### Connect GitHub
+
+1. Pick the GitHub repository where you want to save your solutions, such as `Leetcode-submissions`. If you create a new one, initialize it with a README so it has a default branch.
+2. [Create a fine-grained personal access token](https://github.com/settings/personal-access-tokens/new). Select the repository's owner, grant access to that repository only, and set **Repository permissions → Contents** to **Read and write**.
+3. Open **Verdict Sync**, enter your solutions repository URL and paste the token into the popup. Click **Connect GitHub**. Confirm that the destination is correct and **Auto-sync** is on.
+
+### Connect LeetCode
+
+1. Sign in to [LeetCode](https://leetcode.com/) in the same Chrome or Brave profile where you installed Verdict Sync. The extension uses that session.
+2. Refresh any LeetCode tabs that were already open. On a problem page, click **Submit** and keep the tab open until the extension reads the result.
+3. When LeetCode marks your submission **Accepted**, open Verdict Sync and select **View commit** to see the uploaded files in GitHub.
 
 ## What gets committed
 
